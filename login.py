@@ -20,10 +20,10 @@ class LinkCrawler:
 		self.domain_name		= ""
 		self.LoginButtonsName 	=['Login','Sign in']
 		self.formTypes			= ['text','password']
-		self.btnActionsNames 	= ['submit','button']
+		self.btnActionsNames 	= "submit"
 		self.placeholders 		= ['Enter Email/Mobile number']
 		self.username 			= "test@gmail.com"
-		self.password 			= "12345678"
+		self.password 			= "1234556"
 		self.email_phone_x_path	= ""
 		self.password_x_path	= ""
 		self.elem_txt_action 	= None
@@ -84,10 +84,13 @@ class LinkCrawler:
 
 	def login(self):
 		try:
-			_email_or_phone = self.driver.find_elements_by_link_text(self.email_phone_x_path)
+			_email_or_phone = self.driver.find_element_by_xpath("//span[contains(.,'Enter Email/Mobile number')]//preceding::input[1]")
 			_email_or_phone.send_keys(self.username)
 			_password 		= self.driver.find_element_by_xpath(self.password_x_path)
 			_password.send_keys(self.password)
+			time.sleep(3)
+			btnActions 		= self.driver.find_element_by_xpath("//button/span[contains(text(),'Login')]")
+			btnActions.click()
 			time.sleep(3)
 		except NoSuchElementException:
 			return False
