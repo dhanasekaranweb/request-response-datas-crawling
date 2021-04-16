@@ -10,6 +10,10 @@ import json
 import re
 import requests,urllib,sys,threading,time
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.proxy import Proxy, ProxyType
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 class LinkCrawler:
 
@@ -18,17 +22,22 @@ class LinkCrawler:
 		self.url 				= url
 		self.driver 			= webdriver.Chrome(executable_path=r"/home/dhanasekaran/dhana/practice/link_crawler/chromedriver")
 		self.domain_name		= ""
-		self.LoginButtonsName 	=['Login','Sign in']
-		self.formTypes			= ['text','password']
+		self.LoginButtonsName 	= ['Login','Sign in']
+		self.formTypes			= ['text','password','email']
+		self.twoPageBtns 		= ['Continue']
 		self.btnActionsNames 	= "submit"
 		self.placeholders 		= ['Enter Email/Mobile number']
-		self.username 			= "test@gmail.com"
-		self.password 			= "1234556"
+		self.profile_header_keys= ['']
+		self.username 			= "dfdf@gmail.com"
+		self.password 			= "2332"
 		self.email_phone_x_path	= ""
 		self.password_x_path	= ""
 		self.elem_txt_action 	= None
 		self.LoginElemForm 		= None
 		self.keyElem 			= None
+		self.LoginKey			= None
+		self.LoggedUserName 	= "Dhanasekaran"
+		self.is_password_field_hide = False
 		self.start_scraping()
 
 	def validate_domain(self):
@@ -68,6 +77,18 @@ class LinkCrawler:
 			return False
 		return True
 
+	def is_check_password_element(self,xpath):
+		try:
+			elem 	= self.driver.find_elements_by_xpath( "//input[contains(@type,'password') and contains(@class,'hide')]")
+			if len(elem) > 0:
+				self.elem_txt_action = elem
+				return True
+			else:
+				return False
+		except NoSuchElementException:
+			return False
+		return True
+
 	def find_div_elements(self, xpath):
 		try:
 			self.LoginElemForm	= self.driver.find_element_by_xpath(xpath)
@@ -88,11 +109,31 @@ class LinkCrawler:
 			_email_or_phone.send_keys(self.username)
 			_password 		= self.driver.find_element_by_xpath(self.password_x_path)
 			_password.send_keys(self.password)
-			time.sleep(3)
-			btnActions 		= self.driver.find_element_by_xpath("//button/span[contains(text(),'Login')]")
+			btnActions 		= self.driver.find_element_by_xpath("//button/span[contains(text(),'"+self.LoginKey+"')]")
 			btnActions.click()
 			time.sleep(3)
 		except NoSuchElementException:
+			return False
+
+	def two_page_login_process(self):
+		try:
+			_email_or_phone = self.driver.find_element_by_xpath(self.email_phone_x_path)
+			_email_or_phone.send_keys(self.username)
+			btnActions 		= self.driver.find_element_by_xpath("//input[contains(@type,'submit')]")
+			btnActions.click()
+			_password 		= self.driver.find_element_by_xpath(self.password_x_path)
+			_password.send_keys(self.password)
+			_btnActions 	= self.driver.find_element_by_xpath("//input[contains(@type,'submit')]")
+			_btnActions.click()
+			time.sleep(4)
+		except:
+			return False
+
+	def my_profile_section(self):
+		try:
+			print("fine")
+
+		except:
 			return False
 
 
@@ -110,12 +151,15 @@ class LinkCrawler:
 				_txt_available = self.check_exists_by_link_text(item)
 				if _txt_available == True:
 					#move further
+					self.LoginKey = item
 					if self.elem_txt_action != None:
 						self.elem_txt_action[0].click()
 						#check if email / phone / username input text box available or not
 						for frms in self.formTypes:
 							_xPath 		= str("//input[@type='"+frms+"']")
+							print(_xPath,"_xPath")
 							_frm_types 	= self.check_exists_by_xpath(_xPath)
+							print(_xPath,_frm_types,"_frm_types")
 							if _frm_types == True:
 								#pass values to input field
 								print("path available")
@@ -134,7 +178,12 @@ class LinkCrawler:
 
 			#goto login process
 			if self.email_phone_x_path != "" and self.password_x_path != "":
-				self.login()
+				#check tow page or single paged container
+				check = self.is_check_password_element(self.password_x_path)
+				if check == True:
+					self.two_page_login_process()
+				else:
+					self.login()
 
 
 url= sys.argv[1]
